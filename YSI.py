@@ -22,7 +22,7 @@ else:
     print('FieldData.csv exists, skipping save.')
 
 # Plot
-def plotter(df,var1,var2,basin=True,pH=False):
+def plotter(df,var1,var2,basin=True,pH=False, ci=95):
     df       = df[df[var1].notnull() & df[var2].notnull()].copy()
     df[var1] = pd.to_numeric(df[var1])
     df[var2] = pd.to_numeric(df[var2])
@@ -37,7 +37,8 @@ def plotter(df,var1,var2,basin=True,pH=False):
                 stats_dict[group] = {'r': np.nan, 'p': np.nan, 'r2': np.nan}
         
         fig  = sns.lmplot(data=df,x=var1,y=var2,
-                          hue='Watershed',fit_reg=True)
+                          hue='Watershed',ci=ci,fit_reg=True,
+                          line_kws={"linestyle": "--"})
         
         # Build Legend
         ax = fig.ax
@@ -58,7 +59,8 @@ def plotter(df,var1,var2,basin=True,pH=False):
           bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
    
     else:
-        fig = sns.lmplot(data=df,x=var1,y=var2,fit_reg=True)
+        fig = sns.lmplot(data=df,x=var1,y=var2,
+                         ci=ci,fit_reg=True,line_kws={"linestyle": "--"})
         
         def annotate(data, **kws):
             r, p = sp.stats.pearsonr(data[var1], data[var2])
@@ -72,7 +74,9 @@ def plotter(df,var1,var2,basin=True,pH=False):
     plt.xlabel(var1)
     plt.ylabel(var2)
     if pH:
-        plt.ylim(4,10)
+        plt.xlim(4,10)
     
 # Call
-plotter(df,'Elevation (m)', 'pH',pH=True)
+plotter(df,'pH','Elevation (m)',pH=True)
+plotter(df,'Conductivity (uS/cm)','Elevation (m)',ci=False)
+plotter(df,'Temp (C)','Elevation (m)')
