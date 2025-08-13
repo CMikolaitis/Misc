@@ -22,27 +22,53 @@ else:
     print('FieldData.csv exists, skipping save.')
 
 # Plot
-def plotter(df,var1,var2,basin=True,pH=False, ci=95):
+def plotter(df,var1,var2,basin=True,Copper=False,pH=False,ci=95):
     df       = df[df[var1].notnull() & df[var2].notnull()].copy()
     df[var1] = pd.to_numeric(df[var1])
     df[var2] = pd.to_numeric(df[var2])
+    if Copper:
+        df = df[df["Watershed"] == 'Copper Creek']
+        
+    stats_dict = {}
+    for group, group_df in df.groupby('Watershed'):
+        if len(group_df) > 1:  # Ensure enough data points
+            r, p = sp.stats.pearsonr(group_df[var1], group_df[var2])
+            stats_dict[group] = {'r': r, 'p': p, 'r2': r ** 2}
+        else:
+            stats_dict[group] = {'r': np.nan, 'p': np.nan, 'r2': np.nan}    
         
     if basin:
-        stats_dict = {}
-        for group, group_df in df.groupby('Watershed'):
-            if len(group_df) > 1:  # Ensure enough data points
-                r, p = sp.stats.pearsonr(group_df[var1], group_df[var2])
-                stats_dict[group] = {'r': r, 'p': p, 'r2': r ** 2}
-            else:
-                stats_dict[group] = {'r': np.nan, 'p': np.nan, 'r2': np.nan}
-        
         fig  = sns.lmplot(data=df,x=var1,y=var2,
                           hue='Watershed',ci=ci,fit_reg=True,
                           line_kws={"linestyle": "--"})
-        
-        # Build Legend
-        ax = fig.ax
-        handles, labels = ax.get_legend_handles_labels()
+   
+    else:
+        fig = sns.lmplot(data=df,x=var1,y=var2,
+                         ci=ci,fit_reg=True,line_kws={"linestyle": "--"},
+                         legend=True)
+    # Build Legend
+    if fig._legend:
+        fig._legend.set_visible(False)
+    
+    ax = fig.ax
+    handles, labels = ax.get_legend_handles_labels()
+    if not handles or not labels:
+        unique_group = df['Watershed'].unique()
+        if len(unique_group) == 1:
+            label = unique_group[0]
+            stats = stats_dict.get(label, {})
+            if not stats or np.isnan(stats['r']):
+                new_label = f"{label} (insufficient data)"
+            else:
+                new_label = f"{label}\n    r²={stats['r2']:.2f}\n    r={stats['r']:.2f}\n    p={stats['p']:.2g}"
+            # Use any existing artist to create a dummy handle
+            handle = plt.Line2D([], [], marker='o', color='gray', linestyle='None')
+            handles = [handle]
+            new_labels = [new_label]
+        else:
+            new_labels = labels
+    else:
+        # Multiple groups — build new labels
         new_labels = []
         for label in labels:
             stats = stats_dict.get(label, {})
@@ -51,24 +77,11 @@ def plotter(df,var1,var2,basin=True,pH=False, ci=95):
             else:
                 new_label = f"{label}\n    r²={stats['r2']:.2f}\n    r={stats['r']:.2f}\n    p={stats['p']:.2g}"
             new_labels.append(new_label)
-        
-        # Replace legend
-        fig._legend.remove()
-        ax.legend(handles=handles, labels=new_labels, title="Watershed",
-          title_fontproperties=FontProperties(weight='bold'), 
+
+    # Add custom legend
+    ax.legend(handles=handles, labels=new_labels, title="Watershed",
+          title_fontproperties=FontProperties(weight='bold'),
           bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
-   
-    else:
-        fig = sns.lmplot(data=df,x=var1,y=var2,
-                         ci=ci,fit_reg=True,line_kws={"linestyle": "--"})
-        
-        def annotate(data, **kws):
-            r, p = sp.stats.pearsonr(data[var1], data[var2])
-            r2   = r**2
-            ax   = plt.gca()
-            ax.text(.8, .8, 'r$^2$={:.4f}\nr={:.2f}\np={:.2g}'.format(r2, r, p),
-                    transform=ax.transAxes)
-        fig.map_dataframe(annotate)
     
     # Make it pretty
     plt.xlabel(var1)
@@ -77,6 +90,6 @@ def plotter(df,var1,var2,basin=True,pH=False, ci=95):
         plt.xlim(4,10)
     
 # Call
-plotter(df,'pH','Elevation (m)',pH=True)
+plotter(df,'pH','Elevation (m)',pH=True,Copper=True,basin=False)
 plotter(df,'Conductivity (uS/cm)','Elevation (m)',ci=False)
 plotter(df,'Temp (C)','Elevation (m)')
