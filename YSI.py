@@ -21,16 +21,24 @@ if not os.path.exists('FieldData.csv'):
 else:
     print('FieldData.csv exists, skipping save.')
 
-# Plot
-def plotter(df,var1,var2,basin=True,Copper=False,pH=False,ci=95):
+## Plot
+# df is input dataframe
+# var1 is x
+# var2 is y
+# focus allows for filtering of watersheds
+# basin is a toggle for multiple groups on same plot
+# branch tells what groups to use, coupled with basin (prob refactor later)
+# pH, set x-axis to 4-10
+# ci, what confidence interval do you want?
+def plotter(df,var1,var2,focus='',basin=True,branch='Watershed',pH=False,ci=95):
     df       = df[df[var1].notnull() & df[var2].notnull()].copy()
     df[var1] = pd.to_numeric(df[var1])
     df[var2] = pd.to_numeric(df[var2])
-    if Copper:
-        df = df[df["Watershed"] == 'Copper Creek']
+    if len(focus)>0:
+        df = df[df["Watershed"] == focus]
         
     stats_dict = {}
-    for group, group_df in df.groupby('Watershed'):
+    for group, group_df in df.groupby(branch):
         if len(group_df) > 1:  # Ensure enough data points
             r, p = sp.stats.pearsonr(group_df[var1], group_df[var2])
             stats_dict[group] = {'r': r, 'p': p, 'r2': r ** 2}
@@ -39,9 +47,8 @@ def plotter(df,var1,var2,basin=True,Copper=False,pH=False,ci=95):
         
     if basin:
         fig  = sns.lmplot(data=df,x=var1,y=var2,
-                          hue='Watershed',ci=ci,fit_reg=True,
+                          hue=branch,ci=ci,fit_reg=True,
                           line_kws={"linestyle": "--"})
-   
     else:
         fig = sns.lmplot(data=df,x=var1,y=var2,
                          ci=ci,fit_reg=True,line_kws={"linestyle": "--"},
@@ -53,7 +60,7 @@ def plotter(df,var1,var2,basin=True,Copper=False,pH=False,ci=95):
     ax = fig.ax
     handles, labels = ax.get_legend_handles_labels()
     if not handles or not labels:
-        unique_group = df['Watershed'].unique()
+        unique_group = df[branch].unique()
         if len(unique_group) == 1:
             label = unique_group[0]
             stats = stats_dict.get(label, {})
@@ -90,6 +97,6 @@ def plotter(df,var1,var2,basin=True,Copper=False,pH=False,ci=95):
         plt.xlim(4,10)
     
 # Call
-plotter(df,'pH','Elevation (m)',pH=True,Copper=True,basin=False)
-plotter(df,'Conductivity (uS/cm)','Elevation (m)',ci=False)
-plotter(df,'Temp (C)','Elevation (m)')
+plotter(df,'pH','Elevation (m)',pH=True,focus='Copper Creek',branch='Branch')
+plotter(df,'Conductivity (uS/cm)','Elevation (m)',focus='Copper Creek',branch='Branch')
+plotter(df,'Temp (C)','Elevation (m)',focus='Copper Creek',branch='Branch')
