@@ -37,6 +37,10 @@ def plotter(df,var1,var2,focus='',basin=True,branch='Watershed',
     df[var2] = pd.to_numeric(df[var2])
     if len(focus)>0:
         df = df[df["Watershed"] == focus]
+    
+    # Continuity cuz i'm dumb
+    if not basin:
+        branch='Watershed'
         
     stats_dict = {}
     for group, group_df in df.groupby(branch):
@@ -91,7 +95,7 @@ def plotter(df,var1,var2,focus='',basin=True,branch='Watershed',
     
 # Call
 plotter(df,'pH','Elevation (m)',pH=False,
-        focus='Copper Creek',basin=False,branch='Watershed',outname='CC_pH')
+        focus='Copper Creek',basin=False,branch='Branch',outname='CC_pH')
 plotter(df,'Conductivity (uS/cm)','Elevation (m)',
         focus='Copper Creek',basin=True,branch='Branch',outname='CC_Cond')
 plotter(df,'Temp (C)','Elevation (m)',
