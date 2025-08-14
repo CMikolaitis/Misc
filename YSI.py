@@ -30,7 +30,8 @@ else:
 # branch tells what groups to use, coupled with basin (prob refactor later)
 # pH, set x-axis to 4-10
 # ci, what confidence interval do you want?
-def plotter(df,var1,var2,focus='',basin=True,branch='Watershed',pH=False,ci=95):
+def plotter(df,var1,var2,focus='',basin=True,branch='Watershed',
+            pH=False,ci=95, outname=''):
     df       = df[df[var1].notnull() & df[var2].notnull()].copy()
     df[var1] = pd.to_numeric(df[var1])
     df[var2] = pd.to_numeric(df[var2])
@@ -96,7 +97,11 @@ def plotter(df,var1,var2,focus='',basin=True,branch='Watershed',pH=False,ci=95):
     if pH:
         plt.xlim(4,10)
     
+    # Save
+    if len(outname)>0:
+        plt.savefig(outname,dpi=600,format='png')
+    
 # Call
-plotter(df,'pH','Elevation (m)',pH=True,focus='Copper Creek',branch='Branch')
-plotter(df,'Conductivity (uS/cm)','Elevation (m)',focus='Copper Creek',branch='Branch')
-plotter(df,'Temp (C)','Elevation (m)',focus='Copper Creek',branch='Branch')
+plotter(df,'pH','Elevation (m)',pH=True,focus='Copper Creek',branch='Branch',outname='CC_pH')
+plotter(df,'Conductivity (uS/cm)','Elevation (m)',focus='Copper Creek',branch='Branch',outname='CC_Cond')
+plotter(df,'Temp (C)','Elevation (m)',focus='Copper Creek',branch='Branch',outname='CC_temp')
