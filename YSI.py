@@ -52,8 +52,7 @@ def plotter(df,var1,var2,focus='',basin=True,branch='Watershed',
                           line_kws={"linestyle": "--"})
     else:
         fig = sns.lmplot(data=df,x=var1,y=var2,
-                         ci=ci,fit_reg=True,line_kws={"linestyle": "--"},
-                         legend=True)
+                         ci=ci,fit_reg=True,line_kws={"linestyle": "--"})
     # Build Legend
     if fig._legend:
         fig._legend.set_visible(False)
@@ -61,30 +60,19 @@ def plotter(df,var1,var2,focus='',basin=True,branch='Watershed',
     ax = fig.ax
     handles, labels = ax.get_legend_handles_labels()
     if not handles or not labels:
-        unique_group = df[branch].unique()
-        if len(unique_group) == 1:
-            label = unique_group[0]
-            stats = stats_dict.get(label, {})
-            if not stats or np.isnan(stats['r']):
-                new_label = f"{label} (insufficient data)"
-            else:
-                new_label = f"{label}\n    r²={stats['r2']:.2f}\n    r={stats['r']:.2f}\n    p={stats['p']:.2g}"
-            # Use any existing artist to create a dummy handle
-            handle = plt.Line2D([], [], marker='o', color='gray', linestyle='None')
-            handles = [handle]
-            new_labels = [new_label]
+        handle  = plt.Line2D([], [], marker='o', color='gray', linestyle='None')
+        handles = [handle]
+        labels  = df[branch].unique()
+
+    # Multiple groups — build new labels
+    new_labels = []
+    for label in labels:
+        stats = stats_dict.get(label, {})
+        if not stats or np.isnan(stats['r']):
+            new_label = f"{label} (insufficient data)"
         else:
-            new_labels = labels
-    else:
-        # Multiple groups — build new labels
-        new_labels = []
-        for label in labels:
-            stats = stats_dict.get(label, {})
-            if not stats or np.isnan(stats['r']):
-                new_label = f"{label} (insufficient data)"
-            else:
-                new_label = f"{label}\n    r²={stats['r2']:.2f}\n    r={stats['r']:.2f}\n    p={stats['p']:.2g}"
-            new_labels.append(new_label)
+            new_label = f"{label}\n    r²={stats['r2']:.2f}\n    r={stats['r']:.2f}\n    p={stats['p']:.2g}"
+        new_labels.append(new_label)
 
     # Add custom legend
     ax.legend(handles=handles, labels=new_labels, title="Watershed",
@@ -102,6 +90,9 @@ def plotter(df,var1,var2,focus='',basin=True,branch='Watershed',
         plt.savefig(outname,dpi=600,format='png', bbox_inches='tight')
     
 # Call
-plotter(df,'pH','Elevation (m)',pH=False,focus='Copper Creek',branch='Branch',outname='CC_pH')
-plotter(df,'Conductivity (uS/cm)','Elevation (m)',focus='Copper Creek',branch='Branch',outname='CC_Cond')
-plotter(df,'Temp (C)','Elevation (m)',focus='Copper Creek',branch='Branch',outname='CC_temp')
+plotter(df,'pH','Elevation (m)',pH=False,
+        focus='Copper Creek',basin=False,branch='Watershed',outname='CC_pH')
+plotter(df,'Conductivity (uS/cm)','Elevation (m)',
+        focus='Copper Creek',basin=True,branch='Branch',outname='CC_Cond')
+plotter(df,'Temp (C)','Elevation (m)',
+        focus='Copper Creek',basin=True,branch='Branch',outname='CC_temp')
