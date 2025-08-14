@@ -99,9 +99,9 @@ def plotter(df,var1,var2,focus='',basin=True,branch='Watershed',
     
     # Save
     if len(outname)>0:
-        plt.savefig(outname,dpi=600,format='png')
+        plt.savefig(outname,dpi=600,format='png', bbox_inches='tight')
     
 # Call
-plotter(df,'pH','Elevation (m)',pH=True,focus='Copper Creek',branch='Branch',outname='CC_pH')
+plotter(df,'pH','Elevation (m)',pH=False,focus='Copper Creek',branch='Branch',outname='CC_pH')
 plotter(df,'Conductivity (uS/cm)','Elevation (m)',focus='Copper Creek',branch='Branch',outname='CC_Cond')
 plotter(df,'Temp (C)','Elevation (m)',focus='Copper Creek',branch='Branch',outname='CC_temp')
